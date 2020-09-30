@@ -10,4 +10,5 @@ get-protos: python-env
 	scripts/gather-protos --tf_version $(VERSION); \
 
 build-java: get-protos
-	ls -al target
+	mkdir -p target/java
+	protoc -Itarget --java_out=target/java $$(find target -name *.proto)
