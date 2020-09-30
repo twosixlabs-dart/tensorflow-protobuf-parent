@@ -9,6 +9,6 @@ get-protos: python-env
 	pip install -r requirements.txt; \
 	scripts/gather-protos --tf_version $(VERSION); \
 
-build-java: python-env
+build-java: get-protos
 	mkdir -p target/java
 	protoc -Itarget --java_out target/java $(find target -name *.proto)

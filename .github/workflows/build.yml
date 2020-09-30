@@ -14,4 +14,4 @@ jobs:
           python-version: 3.8.5
       - uses: arduino/setup-protoc@v1
       - run: sudo apt-get install make
-      - run: make get-protos
+      - run: make build-java
