@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+from os import mkdir
+from os.path import exists
+from pathlib import Path
+from shutil import rmtree
+from typing import List
+
+from shutil import copy
+from re import finditer
+from argparse import ArgumentParser
+from git import Repo
+
+from os import makedirs
+
+TENSORFLOW_CORE_REPO_URL = 'https://github.com/tensorflow/tensorflow.git'
+TENSORFLOW_SERVING_REPO_URL = 'https://github.com/tensorflow/serving.git'
+
+
+def setup_workspace( target_dir: str ) -> (str, str):
+    if exists( target_dir ):
+        rmtree( target_dir )
+
+    mkdir( target_dir )
+
+    work_dir = f'{target_dir}/.work'
+    mkdir( work_dir )
+
+    return target_dir, work_dir
+
+
+def clone_repo( to_dir: str, version: str, url: str ):
+    tf_repo = Repo.clone_from( url, to_dir )
+
+    if version != 'latest':
+        tf_repo.git.execute( [ 'git', 'checkout', version ] )
+
+
+def copy_proto_files( work_dir, target_dir ) -> List[ str ]:
+    protos = list( Path( work_dir ).rglob( '*.proto' ) )
+
+    # create the directory structure
+    for file in protos:
+        path = _remove_parent_dir_( str( Path( file ).parent ).replace( work_dir, target_dir ) )
+        if not exists( path ):
+            makedirs( path )
+
+    for file in protos:
+        original_path = str( file )
+        new_path = _remove_parent_dir_( str( Path( file ) ).replace( work_dir, target_dir ) )  # yeee hawww!!!!
+        copy( original_path, new_path )
+
+
+def _remove_parent_dir_( filename: str ) -> str:
+    slashes = list( finditer( '/', filename ) )
+    start = slashes[ 0 ].start()
+    stop = slashes[ 1 ].end()
+
+    left = filename[ 0:start ]
+    right = filename[ stop: ]
+
+    return f'{left}/{right}'
+
+
+def main():
+    parser = ArgumentParser( prog = "gather-protos", description = "organize and gather .proto files from the specified version of tensorflow serving" )
+    parser.add_argument( "--tf_version", required = False, default = "latest", type = str )
+
+    args = parser.parse_args()
+    target = "target"
+
+    print( '-----------------------' )
+    print( f'building protobuf api using Tensorflow version: {args.tf_version}' )
+    print( f'output will be saved to: ./{target}' )
+    print( '-----------------------' )
+
+    target_dir, work_dir = setup_workspace( target )
+
+    hack_tf_version = 'latest' if args.tf_version == 'latest' else f'v{args.tf_version}'
+    clone_repo( f'{work_dir}/tensorflow', hack_tf_version, TENSORFLOW_CORE_REPO_URL )  # tensorflow is annoying in version naming inconsistencies
+    clone_repo( f'{work_dir}/tf-serving', args.tf_version, TENSORFLOW_SERVING_REPO_URL )
+    copy_proto_files( work_dir, target )
+
+    rmtree( work_dir )
+
+
+if __name__ == '__main__':
+    main()
