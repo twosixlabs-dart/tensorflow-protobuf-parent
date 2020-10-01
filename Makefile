@@ -10,10 +10,6 @@ get-protos: python-env
 	scripts/gather-protos --tf_version $(VERSION); \
 
 build-java: get-protos
-	./scripts/java-path-proto
+	./scripts/java-patch
 	mkdir -p target/java
 	protoc -Itarget --java_out=target/java $$(find target -name *.proto)
-
-build-python: get-protos
-	mkdir -p target/python
-	protoc -Itarget --python_out=target/python $$(find target -name *.proto)
