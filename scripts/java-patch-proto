@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+
+from os.path import exists
+from fileinput import input
+from datetime import date
+
+
+def print_warning():
+    today = date.today().strftime( '%d/%m/%Y' )
+    # @formatter:off
+    print( 'because of an issue with a duplicate declaration of java_outer_classname = "Tf2XlaProtos", a patch needs to be applied manually for java compilation to work' )
+    print( 'this issue has been raised in the tensorflow community: https://github.com/tensorflow/tensorflow/issues/25222' )
+    print( f'as of {today} it has still not been fixed' )
+    # @formatter:on
+
+
+def main():
+    print_warning()
+    target = 'target'
+    tfxla_patch_file = f'{target}/tensorflow/compiler/tf2xla/host_compute_metadata.proto'
+    if exists( 'target' ):
+        if exists( tfxla_patch_file ):
+            print( f'patching {tfxla_patch_file}' )
+            for line in input( tfxla_patch_file, inplace = True ):
+                if line == 'option java_outer_classname = "Tf2XlaProtos";\n':
+                    print( 'option java_outer_classname = "HostComputeMetadataProtos";' )
+                else:
+                    print( line, end = '' )
+        else:
+            print( "oh oh, it seems that that this patch is no longer applicable" )
+    else:
+        print( 'the target directory does not exist' )
+        exit( 1 )
+
+
+if __name__ == '__main__':
+    main()
