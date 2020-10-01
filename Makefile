@@ -12,3 +12,7 @@ get-protos: python-env
 build-java: get-protos
 	mkdir -p target/java
 	protoc -Itarget --java_out=target/java $$(find target -name *.proto)
+
+build-python: get-protos
+	mkdir -p target/python
+	protoc -Itarget --python_out=target/python $$(find target -name *.proto)
